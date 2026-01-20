@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WHEELZ ST. | Secure Admin Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root{--black:#000;--blue:#1f4fd8;--grey:#6b7280;}
+body{margin:0;font-family:Segoe UI,Arial;background:#fff;color:#000}
+.hidden{display:none}
+
+/* LOGIN */
+#login{
+  height:100vh;display:flex;align-items:center;justify-content:center;
+}
+.login-box{
+  width:360px;padding:30px;border-radius:14px;
+  border:1px solid #e5e7eb;
+}
+input{
+  width:100%;padding:10px;margin:10px 0;
+  border-radius:8px;border:1px solid #ccc;
+}
+button{
+  padding:10px;border-radius:8px;
+  border:none;background:#000;color:#fff;cursor:pointer;
+}
+
+/* HEADER */
+header{
+  padding:22px 60px;border-bottom:1px solid #e5e7eb;
+  font-size:26px;font-weight:800;
+}
+header span{color:#1f4fd8}
+
+/* NAV */
+nav{
+  padding:20px 60px;display:flex;gap:12px;
+}
+nav button{width:auto}
+
+/* CONTENT */
+section{width:92%;margin:30px auto}
+table{
+  width:100%;border-collapse:collapse;
+  background:#f9fafb;border-radius:14px;
+}
+th,td{
+  padding:12px;text-align:center;border-bottom:1px solid #e5e7eb;
+}
+th{background:#f1f5f9;color:#1f4fd8}
+canvas{
+  background:#f9fafb;border-radius:14px;padding:20px;
+}
+.notice{color:green;font-weight:600}
+.error{color:red}
+</style>
+</head>
+
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="login">
+  <div class="login-box">
+    <h2>WHEELZ ST. Admin Login</h2>
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="loginError" class="error"></p>
+  </div>
+</div>
+
+<!-- ================= DASHBOARD ================= -->
+<div id="app" class="hidden">
+
+<header>WHEELZ<span>ST.</span> Dashboard</header>
+
+<nav>
+  <button onclick="route('finance')">Finance</button>
+  <button onclick="route('add')">Add Data</button>
+  <button onclick="route('changePass')">Change Password</button>
+  <button onclick="logout()">Logout</button>
+</nav>
+
+<!-- FINANCE -->
+<section id="finance">
+<h2>📊 Monthly Financial Performance</h2>
+<table id="financeTable">
+<tr>
+  <th>Month</th><th>Cars Sold</th><th>Sales (AED)</th>
+  <th>Profit (AED)</th><th>Margin</th>
+</tr>
+<tr><td>November</td><td>17</td><td>390000</td><td>700000</td><td></td></tr>
+<tr><td>December</td><td>24</td><td>8923000</td><td>1800000</td><td></td></tr>
+<tr><td>January</td><td>11</td><td>1200000</td><td>2232000</td><td></td></tr>
+<tr><th>Total</th><th></th><th></th><th></th><th></th></tr>
+</table>
+
+<canvas id="chart" height="260"></canvas>
+</section>
+
+<!-- ADD DATA -->
+<section id="add" class="hidden">
+<h2>➕ Add Monthly Sales Data</h2>
+<input id="m" placeholder="Month (e.g. February)">
+<input id="c" type="number" placeholder="Cars Sold">
+<input id="s" type="number" placeholder="Sales (AED)">
+<input id="p" type="number" placeholder="Profit (AED)">
+<button onclick="addEntry()">Add Entry</button>
+</section>
+
+<!-- CHANGE PASSWORD -->
+<section id="changePass" class="hidden">
+<h2>🔐 Change Admin Password</h2>
+<input id="oldPass" type="password" placeholder="Current Password">
+<input id="newPass" type="password" placeholder="New Password">
+<input id="confirmPass" type="password" placeholder="Confirm New Password">
+<button onclick="changePassword()">Update Password</button>
+<p id="passMsg"></p>
+</section>
+
+</div>
+
+<script>
+/* -------- AUTH -------- */
+const adminUser="WheelzAdm1n@ff";
+let adminPass="Adm1n4urqan90";
+
+function login(){
+  if(username.value===adminUser && password.value===adminPass){
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").classList.remove("hidden");
+    route("finance");
+    recalc(); buildChart();
+  } else loginError.innerText="Invalid credentials";
+}
+
+function logout(){
+  location.reload();
+}
+
+/* -------- ROUTER -------- */
+function route(page){
+  document.querySelectorAll("section").forEach(s=>s.classList.add("hidden"));
+  document.getElementById(page).classList.remove("hidden");
+}
+
+/* -------- CHANGE PASSWORD -------- */
+function changePassword(){
+  passMsg.innerText="";
+  if(oldPass.value!==adminPass){
+    passMsg.innerText="Current password is incorrect";
+    passMsg.className="error";
+    return;
+  }
+  if(newPass.value.length<6){
+    passMsg.innerText="Password must be at least 6 characters";
+    passMsg.className="error";
+    return;
+  }
+  if(newPass.value!==confirmPass.value){
+    passMsg.innerText="Passwords do not match";
+    passMsg.className="error";
+    return;
+  }
+  adminPass=newPass.value;
+  oldPass.value=newPass.value=confirmPass.value="";
+  passMsg.innerText="Password updated successfully (session only)";
+  passMsg.className="notice";
+}
+
+/* -------- FINANCE ENGINE -------- */
+function recalc(){
+  const t=financeTable;
+  let ts=0,tp=0;
+  for(let i=1;i<t.rows.length-1;i++){
+    let s=+t.rows[i].cells[2].innerText;
+    let p=+t.rows[i].cells[3].innerText;
+    t.rows[i].cells[4].innerText=((p/s)*100).toFixed(1)+"%";
+    ts+=s; tp+=p;
+  }
+  t.rows[t.rows.length-1].cells[2].innerText="AED "+ts.toLocaleString();
+  t.rows[t.rows.length-1].cells[3].innerText="AED "+tp.toLocaleString();
+  t.rows[t.rows.length-1].cells[4].innerText=((tp/ts)*100).toFixed(1)+"%";
+}
+
+/* -------- ADD ENTRY -------- */
+function addEntry(){
+  const r=financeTable.insertRow(financeTable.rows.length-1);
+  [m.value,c.value,s.value,p.value,""].forEach(v=>{
+    const td=r.insertCell(); td.innerText=v;
+  });
+  m.value=c.value=s.value=p.value="";
+  route("finance");
+  recalc(); buildChart();
+}
+
+/* -------- CHART -------- */
+let chart;
+function buildChart(){
+  const labels=[],sales=[],profits=[];
+  for(let i=1;i<financeTable.rows.length-1;i++){
+    labels.push(financeTable.rows[i].cells[0].innerText);
+    sales.push(+financeTable.rows[i].cells[2].innerText);
+    profits.push(+financeTable.rows[i].cells[3].innerText);
+  }
+  if(chart) chart.destroy();
+  chart=new Chart(document.getElementById("chart"),{
+    type:"bar",
+    data:{labels,datasets:[
+      {label:"Sales (AED)",data:sales},
+      {label:"Profit (AED)",data:profits}
+    ]}
+  });
+}
+</script>
+
+</body>
+</html>
+
